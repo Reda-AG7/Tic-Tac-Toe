@@ -6,6 +6,7 @@ GameState::GameState(sf::RenderWindow& window, std::stack<State *>& states,int& 
     this->gameID = &gameID;
     player1Turn = true;
     gameOver = -1;
+    seconds = minutes = 0u;
     initButtons();
     initPlayers();
     initCarts();
@@ -13,7 +14,8 @@ GameState::GameState(sf::RenderWindow& window, std::stack<State *>& states,int& 
     sBuffer.loadFromFile("Sounds/winning.wav");
     sound.setBuffer(sBuffer);
 
-    initGameOverSprite();
+    initWinner();
+    initTime();
 }
 
 //Destructor
@@ -22,8 +24,8 @@ GameState::~GameState()
     delete player1;
     delete player2;
     delete background;
-    delete gameOverTexture;
-    delete gameOverTexture;
+    delete winner;
+    delete line; delete gameTime;
     for(auto c:carts) delete c;
 }
 
@@ -34,13 +36,13 @@ void GameState::update(float& dt)
     static_cast<float>(sf::Mouse::getPosition(*window).y));
     Cart* selected = nullptr;
     back->update(dt,mousePosition);
-    quit->update(dt,mousePosition); // quit the game
+    updateTime();
     if(back->isButtonClicked()) {
         *gameID = -1;
         states->pop();
     }
-    if(gameOver == 0 || gameOver == 2)
-        updateGameOverSprite();
+    if(gameOver >= 0)
+        updateWinner();
     if(gameOver == -1){
         if(!player1Turn && *gameID == 2) {
             selected = easyMode();
@@ -70,11 +72,30 @@ void GameState::update(float& dt)
     }  
 }
 
-void GameState::updateGameOverSprite()
+void GameState::updateWinner()
 {
-    if(gameOverSprite->getPosition().y > 100.0f)
-        gameOverSprite->move(sf::Vector2f(0.0f,-1.0f));
+    if(gameOver == 0)
+        winner->setString("Draw Game");
+    else if(gameOver == 1)
+        winner->setString(player1Name + "\n Won !!!");
+    else if(gameOver == 2)
+        winner->setString(player2Name + "\n Won !!!");
     
+    if(winner->getPosition().y > 75.0f)
+        winner->move(0.0f,-1.0f);
+}
+
+void GameState::updateTime()
+{
+    if(gameOver == -1)  tEnd = std::chrono::steady_clock::now();
+    seconds = std::chrono::duration_cast<std::chrono::seconds>(tEnd-tStart).count();
+    minutes = seconds/60u;
+    seconds %= 60u;
+    //std::cout<<minutes<<":"<<seconds<<std::endl;
+    std::string strSec = seconds>9 ? std::to_string(seconds) : "0"+std::to_string(seconds);
+    std::string strMin = minutes>9 ? std::to_string(minutes) : "0"+std::to_string(minutes);
+    strMin+=(":"+strSec);
+    gameTime->setString(strMin);
 }
 
 //Renderer
@@ -82,13 +103,12 @@ void GameState::render(sf::RenderTarget& target)
 {
     target.draw(*background);
     back->render(target);
-    quit->render(target);
+    target.draw(*gameTime);
     for(auto cart : carts) cart->render(target);
     if(gameOver > 0) 
         line->render(target);
-    if(gameOver == 0 || gameOver == 2){
-        target.draw(*gameOverSprite);
-    }
+    if(gameOver >= 0)
+        target.draw(*winner);
     
     player1->render(target);
     player2->render(target);
@@ -98,7 +118,6 @@ void GameState::render(sf::RenderTarget& target)
 void GameState::initButtons()
 {
     back = new Button(100.0f,50.0f,150.0f,50.0f,"Back", *regularFont, 20u, sf::Color::White);
-    quit = new Button(window->getSize().x-100.0f,50.0f,150.0f,50.0f,"Quit", *regularFont, 20u, sf::Color::Red);
 }
 
 void GameState::initPlayers()
@@ -127,18 +146,29 @@ void GameState::initCarts()
     }
 }
 
-void GameState::initGameOverSprite()
+void GameState::initWinner()
 {
-    gameOverTexture = new sf::Texture();
-    gameOverTexture->loadFromFile("images/gameOver.png");
-    gameOverSprite = new sf::Sprite();
-    gameOverSprite->setTexture(*gameOverTexture);
-
-    sf::FloatRect gameOvRec = gameOverSprite->getGlobalBounds();
-    gameOverSprite->setOrigin(gameOvRec.left + gameOverTexture->getSize().x/2.0f, gameOvRec.top + gameOverTexture->getSize().y/2.0f);
-    gameOverSprite->setPosition(window->getSize().x/2.0f, window->getSize().y);
+    winner = new sf::Text();
+    winner->setString("Winner is\n");
+    winner->setCharacterSize(60u);
+    winner->setFillColor(sf::Color::Red);
+    winner->setFont(*titleFont);
+    sf::FloatRect winnerRec = winner->getGlobalBounds();
+    winner->setOrigin(winnerRec.left + winnerRec.width/2.0f, winnerRec.top + winnerRec.height/2.0f);
+    winner->setPosition(window->getSize().x/2.0f, window->getSize().y);
 }
 
+void GameState::initTime()
+{
+    tStart = tEnd = std::chrono::steady_clock::now();
+    gameTime = new sf::Text();
+    gameTime->setString("00:00");
+    gameTime->setFont(*regularFont);
+    gameTime->setFillColor(sf::Color::Yellow);
+    sf::FloatRect timeRec = gameTime->getGlobalBounds();
+    gameTime->setOrigin(timeRec.left + timeRec.width/2.0f, timeRec.top + timeRec.height/2.0f);
+    gameTime->setPosition(window->getSize().x-timeRec.width, 50.0f);
+}
 
 //Helper Functions
 void GameState::checkGame()
@@ -284,6 +314,8 @@ Cart* GameState::minimax()
     player1Turn = true;
     return carts[result.second];
 }
+
+
 
 int GameState::checkState(const std::vector<Cart*>& carts) const
 {

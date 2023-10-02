@@ -5,23 +5,26 @@
 #include "../Components/Player.h"
 #include "../Components/Cart.h"
 #include "../Components/Line.h"
+#include<chrono>
 
 class GameState : public State{
     private:
-        Button* back,*quit;
+        Button* back;
         int* gameID;
         Player* player1,*player2;
-        std::string player1Name, player2Name;
-        bool player1Turn;
-        std::vector<Cart*> carts;
         Line* line;
-        int gameOver;
 
         sf::SoundBuffer sBuffer;
         sf::Sound sound;
+        sf::Text* winner;
+        sf::Text* gameTime;
 
-        sf::Sprite* gameOverSprite;
-        sf::Texture* gameOverTexture;
+        std::string player1Name, player2Name;
+        bool player1Turn;
+        std::vector<Cart*> carts;
+        int gameOver;
+        std::chrono::steady_clock::time_point tStart,tEnd;
+        unsigned seconds, minutes;
         //private method
     private: 
         std::pair<int,int> miniMax(std::vector<Cart*>&, bool);
@@ -35,13 +38,12 @@ class GameState : public State{
         void initCarts();
         void checkGame();
         Cart* easyMode() const;
-        
-        void initGameOverSprite();
-        void updateGameOverSprite();
+        void initWinner();
+        void updateWinner();
         int checkState(const std::vector<Cart*>&) const;
         Cart* minimax();
-       
-
+        void initTime();
+        void updateTime();
 };
 
 #endif

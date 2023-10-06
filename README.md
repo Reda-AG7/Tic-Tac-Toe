@@ -5,9 +5,9 @@ In this Small project, I used SFML as a 2D renderer, along with C++ to make Tic 
 The game provides:  
 -    **2 Players Mode:** where two players can play against each other.  
 -    **1 Player Mode:** Where the user chooses the level of difficulty of the computer.  
-  1.        _Easy:_ Where the computer will select the position randomly.  
-  2.        _Medium:_ Where the computer will select the position by doing some searching for some specific cases otherwise will pick it randomly.  
-  3.        _Hard:_ Where the computer uses the MiniMax Algorithm through which the computer will select the best position to either win or prevent the other player from winning.  
+     - Easy: The computer will select the position randomly.  
+     - Medium: The computer will select the position by doing some searching for some specific cases otherwise will pick it randomly.  
+     - Hard:  The computer uses the MiniMax Algorithm through which the computer will select the best position to either win or prevent the other player from winning.   
 
 ## Author
 
